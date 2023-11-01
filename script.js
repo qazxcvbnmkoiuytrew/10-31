@@ -133,3 +133,33 @@ $("form[name=add_event_form]").submit(function (e) {
     e.preventDefault();
 });
 
+$("form[name=modify_event_form]").submit(function(e) {
+
+    var $form = $(this);
+    var $error = $form.find(".error");
+    var data = $form.serialize();
+
+    var event_id = window.location.pathname.split('/').pop();
+    // 构建完整的 URL，将 event_id 插入到 URL 中
+    var url = "/modify_event/" + event_id;
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: data,
+        dataType: "json",
+        success: function(resp) {
+            window.location.href = "/eventlist";
+            window.alert("修改成功");
+        },
+        error: function(resp) {
+            console.log(resp);
+            $error.text(resp.responseJSON.error).removeClass("error--hidden")
+            window.alert("修改失敗");
+        }
+
+    });
+    e.preventDefault();
+
+});
+
