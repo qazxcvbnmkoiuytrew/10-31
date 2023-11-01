@@ -59,3 +59,22 @@ def get_all_event():
 def get_event_image(event_id):
     return Event().get_event_image(event_id)
 
+@app.route("/delete_event/<string:title>", methods = ['GET'])
+def delete_event(title):
+    print("routes: delete event")
+    return Event().delete_event(title)
+
+@app.route("/get_event/<id>", methods = ['GET'])
+def get_event(id):
+    return Event().get_event(id)
+
+@app.route('/ad_event/<event_id>')
+def ad_event_details(event_id):
+    return Event().ad_event_details(event_id)
+
+@app.route('/modify_event/<event_id>', methods = ['GET','POST'])
+def modify_details(event_id):
+    return Event().modify_event(event_id)
+
+
+

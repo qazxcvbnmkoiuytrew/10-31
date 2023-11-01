@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, session, redirect, Response, url_for, send_file
+from flask import Flask, jsonify, request, render_template, session, redirect, Response, url_for, send_file, flash
 import pymongo
 import json
 import re
@@ -213,7 +213,7 @@ class Event:
 
     def get_all_event(self):
         try:
-            events = mydb.events.find({}, {"_id": 0, "title": 1, "time": 1, "category": 1})
+            events = mydb.events.find({}, {"_id": 1, "title": 1, "time": 1, "category": 1})
             return render_template('eventlist.html', events=events)
         except Exception as e:
             print("Error getting all event")
@@ -233,3 +233,62 @@ class Event:
 
         # 如果找不到图片，可以返回默认图片或其他适当的响应
         return "Image not found", 404
+
+    def delete_event(self, title):
+        try:
+            mydb.events.delete_one({"title": title})
+            return redirect('/eventlist')
+        except Exception as e:
+            print("Error deleting event:", str(e))
+            return {'error': str(e)}
+
+        # 個別活動的資料
+
+    def get_event(self, id):
+        try:
+            events = mydb.events.find({}, {"_id": 0, "title": 1, "time": 1, "category": 1})
+
+            try:
+                # 根据id查找特定活动的信息
+                event_info = mydb.events.find_one({"_id": ObjectId(id)}, {"_id": 0})
+                print(event_info)
+                return render_template('eventlist.html', events=events, event_info=event_info)
+
+            except Exception as e:
+                print("Error (inside) get event info: ", str(e))
+                return json_util.dumps({'error': str(e)})
+
+        except Exception as e:
+            print("Error (outside) get all event: ", str(e))
+            return json_util.dumps({'error': str(e)})
+
+    def ad_event_details(self, event_id):
+        # 使用 event_id 检索事件的详细信息，然后将详细信息传递给模板
+        event = mydb.events.find_one({"_id": ObjectId(event_id)})  # 假设您的事件具有唯一的 _id
+        return render_template('ad_event.html', event=event)
+
+    def modify_event(self, event_id):
+        if request.method == "POST":
+            # 处理 POST 请求，更新活动信息
+            new_title = request.form.get("title")
+            new_time = request.form.get("time")
+            # 还可以添加其他需要更新的字段
+
+            # 进行数据库更新操作，假设你的数据库集合名称为 "events"
+            result = mydb.events.update_one(
+                {"_id": ObjectId(event_id)},
+                {"$set": {"title": new_title, "time": new_time}}
+            )
+
+            if result.modified_count > 0:
+                # 更新成功，可以进行相应的操作，如重定向或显示成功消息
+                flash("Event updated successfully", "success")
+                return jsonify({"success": "event changed!"}), 200
+            else:
+                # 更新失败
+                flash("Event update failed", "error")
+
+        # 获取活动信息以在表单中显示
+        event_info = mydb.events.find_one({"_id": ObjectId(event_id)})
+
+        return render_template("modify_event.html", event=event_info)
