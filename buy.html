@@ -1,0 +1,16 @@
+<!-- buy.html 模板 -->
+
+{% extends "base.html" %}
+
+{% block title %} Purchase Details {% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center">購買詳情</h1>
+
+    <div class="purchase-details">
+        <p><strong>選擇的票價：</strong> {{ request.args.get('price', '未選擇') }}</p>
+        <p><strong>購買張數：</strong> {{ request.args.get('amount', '未選擇') }}</p>
+    </div>
+</div>
+{% endblock %}

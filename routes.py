@@ -76,5 +76,13 @@ def ad_event_details(event_id):
 def modify_details(event_id):
     return Event().modify_event(event_id)
 
+@app.route('/event/<event_id>/ticket')
+def event_ticket(event_id):
+    return Event().event_ticket(event_id)
+
+@app.route('/buy')
+def buy():
+    return Event().buy()
+
 
 

@@ -292,3 +292,16 @@ class Event:
         event_info = mydb.events.find_one({"_id": ObjectId(event_id)})
 
         return render_template("modify_event.html", event=event_info)
+
+    def event_ticket(self, event_id):
+        # 使用 event_id 检索事件的详细信息，然后将详细信息传递给模板
+        event = mydb.events.find_one({"_id": ObjectId(event_id)})  # 假设您的事件具有唯一的 _id
+        return render_template('event_ticket.html', event=event)
+
+    def buy(self):
+        # 获取从上一个页面传递过来的票价和张数
+        selected_price = request.args.get('price', '未选择票价')
+        ticket_amount = request.args.get('amount', '未选择张数')
+
+        # 渲染购买页面模板，并传递数据给模板
+        return render_template('buy.html', selected_price=selected_price, ticket_amount=ticket_amount)
