@@ -298,10 +298,11 @@ class Event:
         event = mydb.events.find_one({"_id": ObjectId(event_id)})  # 假设您的事件具有唯一的 _id
         return render_template('event_ticket.html', event=event)
 
-    def buy(self):
-        # 获取从上一个页面传递过来的票价和张数
-        selected_price = request.args.get('price', '未选择票价')
-        ticket_amount = request.args.get('amount', '未选择张数')
-
-        # 渲染购买页面模板，并传递数据给模板
-        return render_template('buy.html', selected_price=selected_price, ticket_amount=ticket_amount)
+    def checkout(self, event_id):
+        user_json = session.get('user')  # Get user JSON from session
+        user_data = json.loads(user_json)  # Parse JSON to dictionary
+        name = user_data['name']
+        email = user_data['email']
+        phone = user_data['phone']
+        event = mydb.events.find_one({"_id": ObjectId(event_id)})
+        return render_template('checkout.html', name=name, email=email, phone=phone, event=event)

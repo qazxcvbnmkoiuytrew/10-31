@@ -80,9 +80,9 @@ def modify_details(event_id):
 def event_ticket(event_id):
     return Event().event_ticket(event_id)
 
-@app.route('/buy')
-def buy():
-    return Event().buy()
+@app.route('/<event_id>/checkout')
+def checkout(event_id):
+    return Event().checkout(event_id)
 
 
 

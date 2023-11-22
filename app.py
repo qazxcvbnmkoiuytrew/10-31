@@ -10,7 +10,15 @@ import os, sys
 import numpy as np
 import time
 from webcam2 import FaceRecognition
+from pymongo import MongoClient
+from gridfs import  GridFS
 
+
+myclient = MongoClient(
+    "mongodb+srv://team17:TqZI3KaT56q6xwYZ@team17.ufycbtt.mongodb.net/"
+)
+mydb = myclient.face
+fs = GridFS(mydb, collection="faces")
 app = Flask(__name__)
 app.secret_key = b'kushfuii7w4y7ry47ihwiheihf8774sdf4'
 
@@ -131,24 +139,16 @@ def take_photo():
 def save_photo():
     global captured_photo  # 声明全局变量
     if captured_photo:
-        username = session.get('name')
-            # 使用当前时间戳作为文件名
-        timestamp = int(time.time())
+        # 使用者名字當檔名
+        user_json = session.get("user")  # Get user JSON from session
+        user_data = json.loads(user_json)  # Parse JSON to dictionary
+        user_name = user_data["name"]
 
-            # 指定保存到 "faces" 子文件夹的路径
-        output_folder = 'faces'
-
-            # 确保目标文件夹存在，如果不存在则创建它
-        os.makedirs(output_folder, exist_ok=True)
-
-            # 创建完整的文件路径，将照片保存到 "faces" 子文件夹中
-        photo_filename = os.path.join(output_folder, f'{username}.jpg')
-
-            # 写入照片数据到文件
-        with open(photo_filename, 'wb') as photo_file:
-            photo_file.write(captured_photo)
-
-
+        try:
+            photo_id = fs.put(captured_photo, filename=f"{user_name}.jpg")
+            print(f"Photo saved with ID: {photo_id}")
+        except Exception as e:
+            print(f"Error saving photo: {str(e)}")
     return redirect(url_for('dashboard'))
 
 @app.route('/retake_photo', methods=['POST'])
@@ -189,7 +189,7 @@ def generate_frames(session):
             break
 
         frame, recognized_name = fr.run_recognition(frame)
-        recognized_name, confidence = recognized_name.split('(', 1)
+        #recognized_name, confidence = recognized_name.split('(', 1)
 
         # 從 session 中獲取名字
         session_name = global_name
@@ -213,7 +213,6 @@ def generate_frames(session):
 @app.route('/video_feed2')
 def video_feed2():
     return Response(generate_frames(session), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', debug=True, port=5000)
