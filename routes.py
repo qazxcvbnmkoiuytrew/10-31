@@ -84,5 +84,13 @@ def event_ticket(event_id):
 def checkout(event_id):
     return Event().checkout(event_id)
 
+@app.route('/create_seat')
+def create_seat():
+    return Event().create_seat()
+
+@app.route('/check_ticket_availability', methods=['GET'])
+def check_ticket_availability():
+    return Event().check_ticket_availability()
+
 
 

@@ -306,3 +306,73 @@ class Event:
         phone = user_data['phone']
         event = mydb.events.find_one({"_id": ObjectId(event_id)})
         return render_template('checkout.html', name=name, email=email, phone=phone, event=event)
+
+    def create_seat(self):
+        seats_data = {
+            'event_id': 'your_event_id',  # 替换为活动的 event_id
+            'title': '胖虎aka孩子王之世界巡迴',  # 活动标题
+            'tickets': [
+                {
+                    'name': '空地前排站票',  # 票种名称
+                    'seats': [
+                        {'seat_num': i, 'status': '未售出', 'member': 'none'} for i in range(1, 11)  # 座位数量为 10
+                    ]
+                },
+                {
+                    'name': '座位前區',
+                    'seats': [
+                        {'seat_num': i, 'status': '未售出', 'member': 'none'} for i in range(1, 26)  # 座位数量为 25
+                    ]
+                },
+                {
+                    'name': '座位後區',
+                    'seats': [
+                        {'seat_num': i, 'status': '已售出', 'member': 'none'} for i in range(1, 16)  # 座位数量为 15
+                    ]
+                }
+            ]
+        }
+        # 插入数据到 seat 表
+        mydb.seat.insert_one(seats_data)
+        return "create_seat"
+
+    def check_ticket_availability(self):
+        event_id = request.args.get('event_id')
+        ticket_name = request.args.get('ticket_name')
+
+        # 查询对应活动的对应票种是否有未售出的票
+        result = mydb.seat.aggregate([
+            {
+                "$match": {
+                    "tickets.name": ticket_name
+                }
+            },
+            {
+                "$unwind": "$tickets"
+            },
+            {
+                "$match": {
+                    "tickets.name": ticket_name,
+                    "tickets.seats.status": "未售出"  # 检查座位状态不是"未售出"的情况
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "count": {"$sum": 1}  # 统计符合条件的文档数量
+                }
+            },
+            {
+                "$project": {
+                    "count": 1
+                }
+            }
+        ])
+
+        remaining_tickets = sum(doc['count'] for doc in result)
+
+        # 检查是否所有票都已售罄
+        is_all_sold = remaining_tickets == 0
+
+        print(f"尚未售出的票數：{remaining_tickets}")
+        return jsonify({'available': not is_all_sold})
