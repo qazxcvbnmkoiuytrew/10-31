@@ -181,25 +181,61 @@ class User:
 
 class Event:
     def add_event(self):
+        title = request.form.get('title')
+        category = request.form.get('category')
+        time = request.form.get('time')
+        ticket_time = request.form.get('ticket_time')
+        description = request.form.get('description')
+        notices = request.form.get('notices')
+
+        # 提取票种信息
+        ticket_types = request.form.getlist('ticket-type-name')
+        ticket_prices = request.form.getlist('ticket-type-price')
+        ticket_amounts = request.form.getlist('ticket-type-amount')
+
+        print("Ticket types:", ticket_types)
+        print("Ticket prices:", ticket_prices)
+        print("Ticket amounts:", ticket_amounts)
+
+        tickets = []
+        for i in range(len(ticket_types)):
+            ticket = {
+                "name": ticket_types[i],
+                "price": ticket_prices[i],
+                "amount": ticket_amounts[i]
+            }
+            tickets.append(ticket)
 
         event = {
-            "title": request.form.get('title'),
-            "category": request.form.get('category'),
-            "time": request.form.get('time'),
-            "ticket_time": request.form.get('ticket_time'),
-            "ticket_price": request.form.get('ticket_price'),
-            "ticket_amount": request.form.get('ticket_amount'),
-            "description": request.form.get('description'),
-            "notices": request.form.get('notices')
+            "title": title,
+            "category": category,
+            "time": time,
+            "ticket_time": ticket_time,
+            "description": description,
+            "notices": notices,
+            "ticket": tickets
         }
 
         # 保存事件到数据库
         if not mydb.events.find_one({"title": event['title']}):
             event_id = mydb.events.insert_one(event).inserted_id
+
+            # 創建座位資料
+            seats_data = {
+                'event_id': str(event_id),
+                'title': title,
+                'tickets': [
+                    {'name': ticket['name'], 'seats': [
+                        {'seat_num': i + 1, 'status': '未售出', 'member': 'none'} for i in range(int(ticket['amount']))
+                    ]} for ticket in tickets
+                ]
+            }
+
+            # 將座位資料插入到座位資料庫
+            mydb.seat.insert_one(seats_data)
             # 提取上传的文件
             photo = request.files.get('photo')
             if photo:
-
                 # 使用事件的ID作为图片文件名
                 photo_filename = f"{event_id}.jpg"
                 try:

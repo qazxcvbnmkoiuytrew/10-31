@@ -40,16 +40,15 @@
         </div>
 
         <!--Ticket Price-->
-        <div class="form-floating form-group mt-3">
-            <input type="text" class="form-control" id="ticket_price" name="ticket_price" placeholder="123 NTD" required>
-            <label for="ticket_price"> Ticket Price </label>
+        <div class="form-floating form-group mt-3" id="ticket-type-fields">
+            <div class="ticket-type-row">
+                <input type="text" class="form-control" name="ticket-type-name" placeholder="ticket-type-name" required>
+                <input type="text" class="form-control" name="ticket-type-price" placeholder="ticket-type-price" required>
+                <input type="text" class="form-control" name="ticket-type-amount" placeholder="ticket-type-amount" required>
+            </div>
         </div>
 
-        <!--Ticket Amount-->
-        <div class="form-floating form-group mt-3">
-            <input type="text" class="form-control" id="ticket_amount" name="ticket_amount" placeholder="123" required>
-            <label for="ticket_amount"> Ticket Amount </label>
-        </div>
+        <button type="button" onclick="addTicketTypeField()" class="btn btn-primary">Add Ticket Type</button>
 
         <!--Description-->
         <div class="form-floating form-group mt-3">
@@ -81,5 +80,38 @@
 </div>
 
 <br><br><br><br>
+<script>
+    function addTicketTypeField() {
+        const ticketFields = document.getElementById('ticket-type-fields');
+        const newTicketTypeRow = document.createElement('div');
+        newTicketTypeRow.classList.add('ticket-type-row');
 
+        const inputName = document.createElement('input');
+        inputName.type = 'text';
+        inputName.classList.add('form-control');
+        inputName.name = 'ticket-type-name';
+        inputName.placeholder = 'ticket-type-name';
+        inputName.required = true;
+
+        const inputPrice = document.createElement('input');
+        inputPrice.type = 'text';
+        inputPrice.classList.add('form-control');
+        inputPrice.name = 'ticket-type-price';
+        inputPrice.placeholder = 'ticket-type-price';
+        inputPrice.required = true;
+
+        const inputAmount = document.createElement('input');
+        inputAmount.type = 'text';
+        inputAmount.classList.add('form-control');
+        inputAmount.name = 'ticket-type-amount';
+        inputAmount.placeholder = 'ticket-type-amount';
+        inputAmount.required = true;
+
+        newTicketTypeRow.appendChild(inputName);
+        newTicketTypeRow.appendChild(inputPrice);
+        newTicketTypeRow.appendChild(inputAmount);
+
+        ticketFields.appendChild(newTicketTypeRow);
+    }
+</script>
 {% endblock %}
