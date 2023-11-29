@@ -1,11 +1,9 @@
-<!-- checkout.html 模板 -->
-
 {% extends "base.html" %}
 
-{% block title %} Purchase Details {% endblock %}
+{% block title %} 結帳 {% endblock %}
 
 {% block content %}
-    <style>
+<style>
     .ticketTable {
         border-collapse: collapse;
         width: 100%;
@@ -16,7 +14,8 @@
         margin-bottom: 1px; /* 調整下邊距 */
     }
 
-    .ticketTable th, .ticketTable td {
+    .ticketTable th,
+    .ticketTable td {
         padding: 10px;
         text-align: left;
     }
@@ -57,103 +56,117 @@
     .btn-delete:hover {
         background-color: #bd2130;
     }
-    </style>
+</style>
 
+<div class="container">
+    <div class="col-md-12 col-sm-12 col-12 mt-3">
+        <div id="countdown" style="font-size: 20px; color: red; text-align: center"></div>
 
-
-    <div class="container">
-        <div class="col-md-12 col-sm-12 col-12 mt-3">
-            <div id="countdown" style="font-size: 20px; color: red; text-align: center"></div>
-
-
-            <p>參與者資料</p>
-                <strong>姓名: </strong> {{ name }} <br>
-                <strong>EMAIL: </strong> {{ email }} <br>
-                <strong>電話: </strong> {{ phone }} <br>
-            </div>
-
-            <br>
-            <div class="orderID">訂單編號 1111111</div>
-            <div class="tableBox">
-                <table class="ticketTable">
-                    <thead class="ticketTable-thead">
-                        <tr>
-                            <th>節目</th>
-                            <th>區域</th>
-                            <th>座位</th>
-                            <th>票價(NTD)</th>
-                            <th class="twAct">修改</th>
-                        </tr>
-                    </thead>
-                    <tbody class="ticketTable-tbody">
-                        <tr>
-                            <td>{{ event.title }}</td>
-                            <td>{{ request.args.get('name', '未選擇') }}</td>
-                            <td>1排1號</td>
-                            <td>{{ request.args.get('price', '未選擇') }}</td>
-                            <td class="initial">
-                                <a class="cancelTicket" href="#" >
-                                    <div class="btn-delete">刪除</div>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr style="background-color: #d3d3d3; text-align: right">
-                            <td colspan="4" style="text-align: left">訂購張數</td>
-                            <td style="text-align: right">1 張</td>
-                        </tr>
-                        <tr style="background-color: #d3d3d3; text-align: right">
-                            <td colspan="4" style="text-align: left">總計(NTD)</td>
-                            <td style="text-align: right">{{ request.args.get('price', '未選擇') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-            <div class="text-center mt-3 mb-0">
-                <button onclick="cancelOrder()">取消訂單</button>
-                <button onclick="proceedToCheckout()">下一步</button>
-            </div>
+        <p>參與者資料</p>
+        <strong>姓名: </strong> {{ name }} <br>
+        <strong>EMAIL: </strong> {{ email }} <br>
+        <strong>電話: </strong> {{ phone }} <br>
     </div>
 
+    <br>
+    <div class="orderID">訂單編號 {{ order_data.order_id }}</div>
+    <div class="tableBox">
+        <table class="ticketTable">
+            <thead class="ticketTable-thead">
+                <tr>
+                    <th>節目</th>
+                    <th>區域</th>
+                    <th>座位</th>
+                    <th>票價(NTD)</th>
+                    <th class="twAct">修改</th>
+                </tr>
+            </thead>
+            <tbody class="ticketTable-tbody">
+                <tr>
+                    <td>{{ order_data.event.title }}</td>
+                    <td>{{ request.args.get('name', '未選擇') }}</td>
+                    <td>{{ request.args.get('seat_num') }}</td>
+                    <td>{{ request.args.get('price', '未選擇') }}</td>
+                    <td class="initial">
+                        <a class="cancelTicket" href="#">
+                            <div class="btn-delete" onclick="cancelOrder()">刪除</div>
+                        </a>
+                    </td>
+                </tr>
+                <tr style="background-color: #d3d3d3; text-align: right">
+                    <td colspan="4" style="text-align: left">訂購張數</td>
+                    <td style="text-align: right">{{ order_data.num_tickets }} 張</td>
+                </tr>
+                <tr style="background-color: #d3d3d3; text-align: right">
+                    <td colspan="4" style="text-align: left">總計(NTD)</td>
+                    <td style="text-align: right">{{ request.args.get('price', '未選擇') }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    <script>
-    // 設定倒數計時器，10分鐘
-    var countdownMinutes = 0;
-    var countdownSeconds = 30;
+<div class="text-center mt-3 mb-0">
+    <button onclick="proceedToCheckout()">下一步，進行身分驗證</button>
+</div>
 
-    var countdownDisplay = document.getElementById('countdown');
+<script>
+    // 函數來更新倒數計時器
+    function updateCountdown(expirationTime) {
+        var countdownElement = document.getElementById('countdown');
+        var remainingTime = Math.floor((new Date(expirationTime) - new Date()) / 1000);
 
-    function updateCountdown() {
-        countdownDisplay.textContent = '剩餘時間: ' + countdownMinutes + '分' + countdownSeconds + '秒';
+        if (remainingTime > 0) {
+            var minutes = Math.floor(remainingTime / 60);
+            var seconds = remainingTime % 60;
 
-        // 如果倒數計時結束，取消訂單
-        if (countdownMinutes === 0 && countdownSeconds === 0) {
-            cancelOrder();
+            countdownElement.innerHTML = '剩餘時間: ' + minutes + '分 ' + seconds + '秒';
         } else {
-            // 更新倒數計時
-            if (countdownSeconds === 0) {
-                countdownMinutes--;
-                countdownSeconds = 59;
-            } else {
-                countdownSeconds--;
-            }
-            setTimeout(updateCountdown, 1000);
+            countdownElement.innerHTML = '已過期';
         }
     }
 
-    // 啟動倒數計時
-    updateCountdown();
+     // 調用函數，更新倒數計時器，僅當 order_expired_at 不為空時
+    {% if order_expired_at %}
+        updateCountdown("{{ order_expired_at }}");
+
+        // 每秒更新一次倒數計時器
+        setInterval(function() {
+            updateCountdown("{{ order_expired_at }}");
+        }, 1000);
+    {% endif %}
 
     function cancelOrder() {
-        alert('訂單已取消');
-        // 可以添加取消訂單的相關邏輯
+        var orderId = "{{ order_data.order_id }}";  // 使用模板語言插入訂單編號
+
+        // 發送 AJAX 請求到後端，取消訂單
+        $.ajax({
+            type: "POST",
+            url: "/cancel_order",  // 根據你的 Flask 路由配置，請確保這個路由存在
+            data: { orderId: orderId },
+            success: function(response) {
+                // 在後端處理完畢後的回應
+                alert(response.message);
+                window.location.href = "/"
+            },
+            error: function(error) {
+                console.error("Error cancelling order:", error);
+            }
+        });
     }
 
+
+
+
     function proceedToCheckout() {
-        alert('前往結帳');
-        // 可以添加前往結帳的相關邏輯
+        alert('前往驗證身分');
+        // 在這裡可以添加前往結帳的相關邏輯
+
+        // 跳轉到 /membercam 路由
+        window.location.href = "/membercam";
     }
+
+
 </script>
 
 {% endblock %}

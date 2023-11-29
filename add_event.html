@@ -41,12 +41,19 @@
 
         <!--Ticket Price-->
         <div class="form-floating form-group mt-3" id="ticket-type-fields">
-            <div class="ticket-type-row">
-                <input type="text" class="form-control" name="ticket-type-name" placeholder="ticket-type-name" required>
-                <input type="text" class="form-control" name="ticket-type-price" placeholder="ticket-type-price" required>
-                <input type="text" class="form-control" name="ticket-type-amount" placeholder="ticket-type-amount" required>
+            <div class="row ticket-type-row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="ticket-type-name" placeholder="Ticket Type Name" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="ticket-type-price" placeholder="Ticket Type Price" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="ticket-type-amount" placeholder="Ticket Type Amount" required>
+                </div>
             </div>
         </div>
+
 
         <button type="button" onclick="addTicketTypeField()" class="btn btn-primary">Add Ticket Type</button>
 
@@ -84,34 +91,44 @@
     function addTicketTypeField() {
         const ticketFields = document.getElementById('ticket-type-fields');
         const newTicketTypeRow = document.createElement('div');
-        newTicketTypeRow.classList.add('ticket-type-row');
+        newTicketTypeRow.classList.add('row', 'ticket-type-row'); // 添加 row 類別
 
+        const col1 = document.createElement('div');
+        col1.classList.add('col-md-4');
         const inputName = document.createElement('input');
         inputName.type = 'text';
         inputName.classList.add('form-control');
         inputName.name = 'ticket-type-name';
-        inputName.placeholder = 'ticket-type-name';
+        inputName.placeholder = 'Ticket Type Name';
         inputName.required = true;
+        col1.appendChild(inputName);
 
+        const col2 = document.createElement('div');
+        col2.classList.add('col-md-4');
         const inputPrice = document.createElement('input');
         inputPrice.type = 'text';
         inputPrice.classList.add('form-control');
         inputPrice.name = 'ticket-type-price';
-        inputPrice.placeholder = 'ticket-type-price';
+        inputPrice.placeholder = 'Ticket Type Price';
         inputPrice.required = true;
+        col2.appendChild(inputPrice);
 
+        const col3 = document.createElement('div');
+        col3.classList.add('col-md-4');
         const inputAmount = document.createElement('input');
         inputAmount.type = 'text';
         inputAmount.classList.add('form-control');
         inputAmount.name = 'ticket-type-amount';
-        inputAmount.placeholder = 'ticket-type-amount';
+        inputAmount.placeholder = 'Ticket Type Amount';
         inputAmount.required = true;
+        col3.appendChild(inputAmount);
 
-        newTicketTypeRow.appendChild(inputName);
-        newTicketTypeRow.appendChild(inputPrice);
-        newTicketTypeRow.appendChild(inputAmount);
+        newTicketTypeRow.appendChild(col1);
+        newTicketTypeRow.appendChild(col2);
+        newTicketTypeRow.appendChild(col3);
 
         ticketFields.appendChild(newTicketTypeRow);
     }
 </script>
+
 {% endblock %}

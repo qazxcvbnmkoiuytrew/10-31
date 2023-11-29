@@ -12,7 +12,8 @@ import time
 from webcam2 import FaceRecognition
 from pymongo import MongoClient
 from gridfs import  GridFS
-
+from datetime import datetime
+import tkinter as tk
 
 myclient = MongoClient(
     "mongodb+srv://team17:TqZI3KaT56q6xwYZ@team17.ufycbtt.mongodb.net/"
@@ -26,7 +27,7 @@ video_stream = VideoCamera()
 global_name = None
 # 全局变量用于存储已拍摄的照片
 captured_photo = None
-
+current_datetime = datetime.now()
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -58,12 +59,26 @@ def home():
     if user_json:
         user = json.loads(user_json)
         user_data = json.loads(user_json)
-        user_name = user_data['name']
-        return render_template('home.html', user_name=user_name)
+        user_email = user_data['email']
+
+        recent_event = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time", 1).limit(6))
+        recent_sale = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort("ticket_time", 1).limit(6))
+
+        return render_template('home.html',
+                               user_email=user_email,
+                               recent_event=recent_event,
+                               recent_sale=recent_sale)
     else:
-        return render_template('home.html')
+        recent_event = list(
+            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time",
+                                                                                                           1).limit(6))
+        recent_sale = list(
+            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort(
+                "ticket_time", 1).limit(6))
 
-
+        return render_template('home.html',
+                               recent_event=recent_event,
+                               recent_sale=recent_sale)
 @app.route('/register')
 def user_signup():
     return render_template('register.html')
@@ -75,7 +90,7 @@ def user_login():
     return render_template('login.html')
 
 
-@app.route('/dashboard/')
+@app.route('/memberprofile/')
 @login_required
 def dashboard():
     user_json = session.get('user')
@@ -83,7 +98,7 @@ def dashboard():
         user = json.loads(user_json)
         user_data = json.loads(user_json)
         user_name = user_data['name']
-        return render_template('dashboard.html', user_name=user_name)
+        return render_template('memberprofile.html', user_name=user_name)
     else:
         print("user_json is NOT a thing")
         return redirect('/user/login')
@@ -175,44 +190,30 @@ def set_name():
 def cam2():
     return render_template('cam2.html')
 
-def generate_frames(session):
+def generate_frames():
     fr = FaceRecognition()
     video_capture = cv2.VideoCapture(0)
 
     if not video_capture.isOpened():
         sys.exit('video source not found...')
-    count = 0
 
-    while count < 5:
+    while True:
         ret, frame = video_capture.read()
         if not ret:
             break
 
-        frame, recognized_name = fr.run_recognition(frame)
-        #recognized_name, confidence = recognized_name.split('(', 1)
-
-        # 從 session 中獲取名字
-        session_name = global_name
-        print(session_name)
-        print(recognized_name)
-        # 比對辨識出來的名字和 session 中的名字是否一致
-        if recognized_name == session_name:
-            print("辨識結果和 session 中的名字一致")
-        else:
-            print("辨識結果和 session 中的名字不一致")
+        frame = fr.run_recognition(frame)
 
         _, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        count+=1
-
     video_capture.release()
 
 @app.route('/video_feed2')
 def video_feed2():
-    return Response(generate_frames(session), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', debug=True, port=5000)

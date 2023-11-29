@@ -5,7 +5,7 @@
 {% block content %}
 <style>
     .ticket-label {
-        font-size: 20px; /* 设置票价和票种名称的字体大小 */
+        font-size: 40px; /* 设置票价和票种名称的字体大小 */
     }
 </style>
 <div class="container">
@@ -32,10 +32,9 @@
         <button onclick="checkTicketAvailability()">購買</button>
     </div>
 </div>
-
 <script>
 function checkTicketAvailability() {
-    var selectedPrice, selectedName;
+    var selectedPrice, selectedName, seatNumber; // 新增座位編號變數
     var priceOptions = document.getElementsByName('ticketPrice');
     for (var i = 0; i < priceOptions.length; i++) {
         if (priceOptions[i].checked) {
@@ -61,7 +60,7 @@ function checkTicketAvailability() {
         if (xhr.readyState === XMLHttpRequest.DONE) {
             var response = JSON.parse(xhr.responseText);
             if (response.available) {
-                redirectToCheckout(selectedPrice, selectedName);
+                redirectToCheckout(selectedPrice, selectedName, response.seat_number); // 添加座位編號參數
             } else {
                 alert('該票種已售罄，請選擇其他票種！');
             }
@@ -69,11 +68,11 @@ function checkTicketAvailability() {
     };
 }
 
-function redirectToCheckout(price, name) {
+function redirectToCheckout(price, name, seatNum) {
     var encodedName = encodeURI(name);
     var ticketAmount = 1;
     var eventId = '{{ event._id }}';
-    window.location.href = '/' + eventId + '/checkout?price=' + price + '&name=' + encodedName + '&amount=' + ticketAmount;
+    window.location.href = '/' + eventId + '/checkout?price=' + price + '&name=' + encodedName + '&amount=' + ticketAmount + '&seat_num=' + seatNum;
 }
 </script>
 {% endblock %}
