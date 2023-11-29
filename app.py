@@ -160,11 +160,11 @@ def save_photo():
         user_name = user_data["name"]
 
         try:
-            photo_id = fs.put(captured_photo, filename=f"{user_name}.jpg")
+            photo_id = fs.put(captured_photo, filename=f"{user_name}")
             print(f"Photo saved with ID: {photo_id}")
         except Exception as e:
             print(f"Error saving photo: {str(e)}")
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('memberprofile'))
 
 @app.route('/retake_photo', methods=['POST'])
 def retake_photo():
@@ -204,12 +204,23 @@ def generate_frames():
 
         frame = fr.run_recognition(frame)
 
-        _, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        if frame is not None:  # 檢查 frame 是否為有效的圖像
+            _, buffer = cv2.imencode('.jpg', frame)
+            if buffer is not None:  # 檢查 buffer 是否為有效的編碼
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            else:
+                print("Error encoding frame")
+        else:
+            print("No frame captured")
+
+        # 檢查是否需要退出捕獲視頻
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     video_capture.release()
+    cv2.destroyAllWindows()
+
 
 @app.route('/video_feed2')
 def video_feed2():

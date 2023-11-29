@@ -68,10 +68,9 @@ class FaceRecognition:
         self.face_encodings = face_recognition.face_encodings(rgb_small_frame, self.face_locations)
 
         self.face_names = []
-        name = 'Unknown'
         for face_encoding in self.face_encodings:
             matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
-
+            name = 'Unknown'
             confidence = 'Unknown'
 
             face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
@@ -97,5 +96,5 @@ class FaceRecognition:
 
 
 
-        return frame, name
+        return frame
 
