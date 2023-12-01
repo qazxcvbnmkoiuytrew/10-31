@@ -53,32 +53,6 @@ def gen(camera):
 # routes
 from user import routes
 
-@app.route('/')
-def home():
-    user_json = session.get('user')
-    if user_json:
-        user = json.loads(user_json)
-        user_data = json.loads(user_json)
-        user_email = user_data['email']
-
-        recent_event = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time", 1).limit(6))
-        recent_sale = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort("ticket_time", 1).limit(6))
-
-        return render_template('home.html',
-                               user_email=user_email,
-                               recent_event=recent_event,
-                               recent_sale=recent_sale)
-    else:
-        recent_event = list(
-            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time",
-                                                                                                           1).limit(6))
-        recent_sale = list(
-            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort(
-                "ticket_time", 1).limit(6))
-
-        return render_template('home.html',
-                               recent_event=recent_event,
-                               recent_sale=recent_sale)
 @app.route('/register')
 def user_signup():
     return render_template('register.html')

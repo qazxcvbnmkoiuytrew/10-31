@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, Response
+from flask import Flask, render_template, session, Response, request
 from app import app
 from user.models import User, Event
 from bson import ObjectId
@@ -8,12 +8,41 @@ from tkinter import messagebox
 import json
 import webbrowser
 import pymongo
+from datetime import datetime
 
 myclient = pymongo.MongoClient("mongodb+srv://team17:TqZI3KaT56q6xwYZ@team17.ufycbtt.mongodb.net/")
 mydb = myclient.test
 
 global_name = None
 result = 0
+current_datetime = datetime.now()
+
+@app.route('/')
+def home():
+    user_json = session.get('user')
+    if user_json:
+        user = json.loads(user_json)
+        user_data = json.loads(user_json)
+        user_email = user_data['email']
+
+        recent_event = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time", 1).limit(6))
+        recent_sale = list(mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort("ticket_time", 1).limit(6))
+
+        return render_template('home.html',
+                               user_email=user_email,
+                               recent_event=recent_event,
+                               recent_sale=recent_sale)
+    else:
+        recent_event = list(
+            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'time': 1}).sort("time",
+                                                                                                           1).limit(6))
+        recent_sale = list(
+            mydb.events.find({'time': {'$gte': current_datetime}}, {'_id': 1, 'title': 1, 'ticket_time': 1}).sort(
+                "ticket_time", 1).limit(6))
+
+        return render_template('home.html',
+                               recent_event=recent_event,
+                               recent_sale=recent_sale)
 
 @app.route('/user/signup', methods=['POST'])
 def signup():
@@ -107,9 +136,9 @@ def check_ticket_availability():
 def cancel_order():
     return Event().cancel_order()
 
-@app.route('/update_order_status', methods=['POST'])
-def update_order_status():
-    return Event().update_order_status()
+@app.route('/order')
+def order():
+    return Event().order()
 
 @app.route("/all_event", methods = ['GET'])
 def all_event():
@@ -159,15 +188,15 @@ def generate_frames_session(session):
         # 比對辨識出來的名字和 session 中的名字是否一致
         if recognized_name[0] == session_name:
             print("辨識結果和 session 中的名字一致")
-            #show_success_popup(session_name)
+            # show_success_popup(session_name)
             correct += 1
-            #return redirect(url_for('recognition_correct'))
-            #flash("辨識結果和 session 中的名字一致", "success")
+            # return redirect(url_for('recognition_correct'))
+            # flash("辨識結果和 session 中的名字一致", "success")
         else:
             print("辨識結果和 session 中的名字不一致")
             fail += 1
-            #return redirect(url_for('recognition_fail.html'))
-            #flash("辨識結果和 session 中的名字不一致", "error")
+            # return redirect(url_for('recognition_fail.html'))
+            # flash("辨識結果和 session 中的名字不一致", "error")
 
         _, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
@@ -188,63 +217,70 @@ def recognition_result():
     if result >= 0.75:
         print(result)
         #show_success_popup(session_name)
-        return render_template('recognition_correct.html')
+        return Event().recognition_correct()
     elif result <0.75:
         print(result)
         #show_fail_popup(session_name)
         return render_template('recognition_fail.html')
 
-@app.route('/recognition_correct', methods=['POST'])
-def recognition_correct():
-    user_json = session.get('user')
-    user_data = json.loads(user_json)
+@app.route('/cam2/<event_id>')
+def camtest(event_id):
+    return render_template('camtest.html', event_id=event_id)
 
-    existing_order = mydb.orders.find_one({
-        'user_name': user_data['name'],
-        'order_status': 1
-    },
-        sort=[('order_created_at', pymongo.DESCENDING)])
+def generate_frames_test(event_id):
+    fr = FaceRecognition_member()
+    video_capture = cv2.VideoCapture(0)
 
-    if existing_order:
-        order_id = existing_order['order_id']
+    if not video_capture.isOpened():
+        return 'Video source not found'
 
-        # 在這裡添加更新訂單狀態的邏輯
-        # 這是一個示例，你需要根據你的實際情況進行修改
-        result = mydb.orders.update_one(
-            {'order_id': order_id},
-            {'$set': {'order_status': 2}}  # 將訂單狀態更改為 2，表示已確認驗證
-        )
+    while True:
+        ret, frame = video_capture.read()
+        if not ret:
+            break
 
-        if result.modified_count > 0:
-            # 更新成功，返回成功的消息
-            return render_template('recognition_correct.html')
+        frame, recognized_name = fr.run_recognition(frame)
+        recognized_name = recognized_name.split('(', 1)
+        print("Recognized name:", recognized_name[0])
+            # Query seat members from the database here and check for matching results
+            # Replace the code below with your database query logic
+        matching_result = check_seat_member(event_id,recognized_name[0])
+
+        if matching_result:
+            print("Detected a matching seat member in the database")
+
+                # Perform some action when a matching member is detected
+                # For example, show a success message or update a variable
+
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    video_capture.release()
+
+def check_seat_member(event_id, recognized_name):
+
+    seat_collection = mydb.seat
+
+        # 根据event_id查询特定活动的座位信息
+    result = seat_collection.find_one({"event_id": event_id})
+
+    if result:
+        tickets = result.get("tickets", [])
+        for ticket in tickets:
+            seats = ticket.get("seats", [])
+            for seat in seats:
+                if seat.get("status") == "已售出" and seat.get("member") == recognized_name:
+                    print(f"Matching seat member found for {recognized_name} in seat {seat.get('seat_num')}")
+                    return True  # 找到匹配的座位成员
+
+    return False  # 没有找到匹配的座位成员
+@app.route('/video_feedtest/<event_id>')
+def video_feedtest(event_id):
+    return Response(generate_frames_test(event_id), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-
-
-@app.route('/recognition_fail')
-def recognition_fail():
-    print('成功進判斷式')
-    print(result)
-    return render_template('recognition_fail.html')
-
-from flask import request, jsonify
-
-@app.route('/confirm_verification', methods=['POST'])
-def confirm_verification():
-    return User.confirm_verification()
-
-
-def show_success_popup(name):
-    message = f"{name} 成功驗證為本人"
-    messagebox.showinfo('Recognition Success', message)  # 訊息內容
-    webbrowser.open('http://127.0.0.1:5000/recognition_correct')
-
-def show_fail_popup(name):
-    message = f"{name} 驗證失敗"
-    messagebox.showwarning(title='Recognition Fail',  # 視窗標題
-                        message=message)  # 訊息內容
-    webbrowser.open('http://127.0.0.1:5000/recognition_fail')
 
 
 
