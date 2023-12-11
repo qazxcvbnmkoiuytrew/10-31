@@ -9,6 +9,7 @@ import json
 import webbrowser
 import pymongo
 from datetime import datetime
+from flask_socketio import SocketIO
 
 myclient = pymongo.MongoClient("mongodb+srv://team17:TqZI3KaT56q6xwYZ@team17.ufycbtt.mongodb.net/")
 mydb = myclient.test
@@ -16,6 +17,7 @@ mydb = myclient.test
 global_name = None
 result = 0
 current_datetime = datetime.now()
+socketio = SocketIO(app)
 
 @app.route('/')
 def home():
@@ -241,16 +243,16 @@ def generate_frames_test(event_id):
 
         frame, recognized_name = fr.run_recognition(frame)
         recognized_name = recognized_name.split('(', 1)
-        print("Recognized name:", recognized_name[0])
+
             # Query seat members from the database here and check for matching results
             # Replace the code below with your database query logic
         matching_result = check_seat_member(event_id,recognized_name[0])
 
         if matching_result:
-            print("Detected a matching seat member in the database")
+            print("為此活動的參加者")
 
-                # Perform some action when a matching member is detected
-                # For example, show a success message or update a variable
+        # Perform some action when a matching member is detected
+        # For example, show a success message or update a variable
 
         _, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
@@ -272,10 +274,13 @@ def check_seat_member(event_id, recognized_name):
             seats = ticket.get("seats", [])
             for seat in seats:
                 if seat.get("status") == "已售出" and seat.get("member") == recognized_name:
-                    print(f"Matching seat member found for {recognized_name} in seat {seat.get('seat_num')}")
-                    return True  # 找到匹配的座位成员
+                    message = f"Matching seat member found for {recognized_name} in seat {seat.get('seat_num')}"
+                    print(message)
+                    socketio.emit('seat_member_found', {'message': message})
+                    return True
 
     return False  # 没有找到匹配的座位成员
+
 @app.route('/video_feedtest/<event_id>')
 def video_feedtest(event_id):
     return Response(generate_frames_test(event_id), mimetype='multipart/x-mixed-replace; boundary=frame')
